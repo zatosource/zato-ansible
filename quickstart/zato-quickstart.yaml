@@ -6,6 +6,7 @@
 
     pg_version: "14"
     zato_version: "3.2"
+    zato_tests_base_dir: "{{ zato_version }}.0"
 
     zato_env_path: "/opt/zato/env/qs-1"
 
@@ -23,7 +24,7 @@
     zato_python_reqs_tmp: "/tmp/zato-user-reqs/requirements.txt"
 
     zato_has_python_reqs_in_tmp: false
-    zato_run_tests: false
+    zato_run_internal_tests: false
 
     zato_ssh_user_password_file: /opt/zato/env/details/zato-ssh-user-password.txt
     zato_ide_publisher_password_file: /opt/zato/env/details/zato-ide-publisher-password.txt
@@ -49,9 +50,9 @@
   tasks:
 
     - name: Check if tests should execute
-      when: Zato_Run_Tests | default(False)
+      when: Zato_Run_Internal_Tests | default(False)
       set_fact:
-        zato_run_tests: true
+        zato_run_internal_tests: true
 
     - name: Prepare Python requirements location configuration
       when: Zato_Has_Python_Reqs_In_Tmp | default(False)
@@ -135,19 +136,26 @@
           - software-properties-common
 
     - name: Install NodeJS (for testing)
-      when: zato_run_tests
+      when: zato_run_internal_tests
       shell: |
         curl -sL https://deb.nodesource.com/setup_17.x | bash -
         apt-get install -y nodejs
 
-    - name: Configure the firewall (ufw)
+    - name: Configure the firewall (ufw -> basic)
       when: zato_firewall_limit_to_local_connections
-      shell: |
-        ufw logging medium
-        ufw allow from 10.0.0.0/8 to any
-        ufw allow from 172.16.0.0/12 to any
-        ufw allow from 192.168.0.0/16 to any
-        ufw enable
+      community.general.ufw:
+        state: enabled
+        logging: "medium"
+
+    - name: Configure the firewall (ufw -> local connections)
+      when: zato_firewall_limit_to_local_connections
+      community.general.ufw:
+        policy: allow
+        src: "{{ item }}"
+      with_items:
+        - 10.0.0.0/8
+        - 172.16.0.0/12
+        - 192.168.0.0/16
 
     - name: Import the GPG signing key for PostgreSQL {{ pg_version }}
       apt_key:
@@ -349,7 +357,7 @@
             --verbose
 
     - name: Enable internal services (if testing)
-      when: zato_run_tests
+      when: zato_run_internal_tests
       become: true
       become_user: "zato"
       replace:
@@ -393,9 +401,9 @@
       become: true
       become_user: "zato"
       shell: |
-        ln -sfv {{ zato_ssh_user_password_file }}   ~/zato_user_password
+        ln -sfv {{ zato_ssh_user_password_file }} ~/zato_user_password
         ln -sfv {{ zato_dashboard_admin_password_file }} ~/web_admin_password
-        ln -sfv {{ zato_ide_publisher_password_file }}   ~/zato_ide_publisher_password
+        ln -sfv {{ zato_ide_publisher_password_file }} ~/zato_ide_publisher_password
 
     - name: Set Bash defaults (zato)
       become: true
