@@ -1,0 +1,112 @@
+
+- name: Update and upgrade apt packages (01)
+  apt:
+    upgrade: yes
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Install preliminary packages
+  apt:
+    name:
+      - mc
+      - acl
+      - git
+      - vim
+      - ufw
+      - curl
+      - htop
+      - wget
+      - procps
+      - tshark
+      - tzdata
+      - mlocate
+      - net-tools
+      - libssl-dev
+      - lsb-release
+      - redis-server
+      - libldap2-dev
+      - libsasl2-dev
+      - openssh-server
+      - bash-completion
+      - python3-psycopg2
+      - apt-transport-https
+      - software-properties-common
+
+- name: Ensure the expected locales are generated
+  shell: |
+    locale-gen en_US.UTF-8
+
+- name: Install NodeJS (for testing)
+  when: zato_run_internal_tests
+  shell: |
+    curl -sL https://deb.nodesource.com/setup_17.x | bash -
+    apt-get install -y nodejs
+
+- name: Configure the firewall (ufw -> basic)
+  when: zato_firewall_limit_to_local_connections
+  community.general.ufw:
+    state: enabled
+    logging: "medium"
+
+- name: Configure the firewall (ufw -> local connections)
+  when: zato_firewall_limit_to_local_connections
+  community.general.ufw:
+    policy: allow
+    src: "{{ item }}"
+  with_items:
+    - 10.0.0.0/8
+    - 172.16.0.0/12
+    - 192.168.0.0/16
+
+- name: Import the GPG signing key for PostgreSQL {{ pg_version }}
+  apt_key:
+    state: present
+    url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+
+- name: Import the GPG signing key for Zato {{ zato_version }}
+  apt_key:
+    state: present
+    url: https://zato.io/repo/zato-3.2-48849AAD40BCBB0E.pgp.txt
+
+- name: Get the system's codename
+  command: "lsb_release -cs"
+  register: ubuntu_release
+
+- name: Add the apt repository for PostgreSQL {{ pg_version }}
+  apt_repository:
+    repo: "deb https://apt.postgresql.org/pub/repos/apt/ {{ ubuntu_release.stdout }}-pgdg main"
+    state: present
+
+- name: Add the apt repository for Zato {{ zato_version }}
+  apt_repository:
+    state: present
+    repo: "deb [arch=amd64] https://zato.io/repo/stable/{{ zato_version }}/ubuntu {{ubuntu_release.stdout}} main"
+
+- name: Update apt cache before the installation of packages
+  apt: update_cache=yes
+
+- name: Install PostgreSQL {{ pg_version }}
+  apt:
+    state: present
+    name: postgresql-{{ pg_version }}
+
+- name: Install Zato {{ zato_version }}
+  apt:
+    state: present
+    name: zato
+
+- name: Prepare work directories for Ansible
+  shell: |
+    mkdir -p /var/lib/postgresql/.ansible/tmp
+    chown -R postgres:postgres /var/lib/postgresql/.ansible
+
+    mkdir -p /opt/zato/.ansible/tmp
+    chown -R zato:zato /opt/zato/.ansible
+
+- name: Install Zato {{ zato_version }} updates
+  become: true
+  become_user: "zato"
+  shell: |
+    cd ~/current
+    git pull
+    ~/current/update.sh

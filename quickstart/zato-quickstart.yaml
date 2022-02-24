@@ -6,7 +6,7 @@
 
     pg_version: "14"
     zato_version: "3.2"
-    zato_tests_base_dir: "{{ zato_version }}.0"
+    zato_tests_base_dir: "~/{{ zato_version }}.0"
 
     zato_env_path: "/opt/zato/env/qs-1"
 
@@ -16,15 +16,11 @@
     zato_db_username_main: "zato_user_main1"
     zato_db_username_pubsub: "zato_user_pubsub1"
 
-
     pg_conf_path: "/etc/postgresql/{{ pg_version }}/main/postgresql.conf"
     pg_hba_conf_path: "/etc/postgresql/{{ pg_version }}/main/pg_hba.conf"
 
     zato_python_reqs_opt: "/opt/hot-deploy/python-reqs/requirements.txt"
     zato_python_reqs_tmp: "/tmp/zato-user-reqs/requirements.txt"
-
-    zato_has_python_reqs_in_tmp: false
-    zato_run_internal_tests: false
 
     zato_ssh_user_password_file: /opt/zato/env/details/zato-ssh-user-password.txt
     zato_ide_publisher_password_file: /opt/zato/env/details/zato-ide-publisher-password.txt
@@ -47,19 +43,37 @@
         export ZATO_USER_CONF_DIR=/opt/hot-deploy/user-conf
         export ZATO_HOT_DEPLOY_PREFER_SNAPSHOTS={{ zato_hot_deploy_prefer_snapshots }}
 
+    zato_run_internal_tests: "{{ Zato_Run_Internal_Tests | default(False) }}"
+    zato_has_python_reqs_in_tmp: "{{ Zato_Has_Python_Reqs_In_Tmp | default(False) }}"
+    zato_firewall_limit_to_local_connections: "{{ Zato_Firewall_Limit_To_Local_Connections | default(False) }}"
+
+    zato_qs_run_01: "{{ Zato_Run_Quickstart_Step_01 | default(False) }}"
+    zato_qs_run_02: "{{ Zato_Run_Quickstart_Step_02 | default(False) }}"
+
+    environment_config:
+
+      zato_env_path: "{{ zato_env_path }}"
+
+      zato_ssh_username: "zato"
+      zato_ssh_password: "{{ zato_ssh_user_password }}"
+
+      zato_ide_publisher_username: "ide_publisher"
+      zato_ide_publisher_password: "{{ zato_ide_publisher_password }}"
+
+      zato_dashboard_admin_username: "admin"
+      zato_dashboard_admin_password: "{{ zato_dashboard_admin_password }}"
+
+      zato_db_type: "{{ zato_db_type }}"
+      zato_db_host: "{{ zato_db_host }}"
+      zato_db_port: "{{ zato_db_port }}"
+      zato_db_main: "{{ zato_db_main }}"
+
+      zato_db_username_main: "{{ zato_db_username_main }}"
+      zato_db_password_main: "{{ zato_db_password_main }}"
+
   tasks:
 
-    - name: Check if tests should execute
-      when: Zato_Run_Internal_Tests | default(False)
-      set_fact:
-        zato_run_internal_tests: true
-
-    - name: Prepare Python requirements location configuration
-      when: Zato_Has_Python_Reqs_In_Tmp | default(False)
-      set_fact:
-        zato_has_python_reqs_in_tmp: true
-
-    - name: Prepare credentials and resolve static configuration
+    - name: Set facts
       set_fact:
 
         zato_python_reqs: "{{ zato_python_reqs_tmp if zato_has_python_reqs_in_tmp else zato_python_reqs_opt }}"
@@ -81,457 +95,10 @@
         zato_hot_deploy_prefer_snapshots: "{{ Zato_Hot_Deploy_Prefer_Snapshots | default(True) }}"
         zato_firewall_limit_to_local_connections: "{{ Zato_Firewall_Limit_To_Local_Connections | default(False) }}"
 
-    - name: Prepare data for the environment config file
-      set_fact:
-
-        environment_config:
-
-          zato_env_path: "{{ zato_env_path }}"
-
-          zato_ssh_username: "zato"
-          zato_ssh_password: "{{ zato_ssh_user_password }}"
-
-          zato_ide_publisher_username: "ide_publisher"
-          zato_ide_publisher_password: "{{ zato_ide_publisher_password }}"
-
-          zato_dashboard_admin_username: "admin"
-          zato_dashboard_admin_password: "{{ zato_dashboard_admin_password }}"
-
-          zato_db_type: "{{ zato_db_type }}"
-          zato_db_host: "{{ zato_db_host }}"
-          zato_db_port: "{{ zato_db_port }}"
-          zato_db_main: "{{ zato_db_main }}"
-
-          zato_db_username_main: "{{ zato_db_username_main }}"
-          zato_db_password_main: "{{ zato_db_password_main }}"
-
-    - name: Update and upgrade apt packages
-      apt:
-        upgrade: yes
-        update_cache: yes
-        cache_valid_time: 3600
-
-    - name: Install preliminary packages
-      apt:
-        name:
-          - mc
-          - acl
-          - git
-          - vim
-          - ufw
-          - htop
-          - wget
-          - procps
-          - tshark
-          - tzdata
-          - mlocate
-          - net-tools
-          - libssl-dev
-          - redis-server
-          - libldap2-dev
-          - libsasl2-dev
-          - bash-completion
-          - python3-psycopg2
-          - apt-transport-https
-          - software-properties-common
-
-    - name: Install NodeJS (for testing)
-      when: zato_run_internal_tests
-      shell: |
-        curl -sL https://deb.nodesource.com/setup_17.x | bash -
-        apt-get install -y nodejs
-
-    - name: Configure the firewall (ufw -> basic)
-      when: zato_firewall_limit_to_local_connections
-      community.general.ufw:
-        state: enabled
-        logging: "medium"
-
-    - name: Configure the firewall (ufw -> local connections)
-      when: zato_firewall_limit_to_local_connections
-      community.general.ufw:
-        policy: allow
-        src: "{{ item }}"
-      with_items:
-        - 10.0.0.0/8
-        - 172.16.0.0/12
-        - 192.168.0.0/16
-
-    - name: Import the GPG signing key for PostgreSQL {{ pg_version }}
-      apt_key:
-        state: present
-        url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
-
-    - name: Import the GPG signing key for Zato {{ zato_version }}
-      apt_key:
-        state: present
-        url: https://zato.io/repo/zato-3.2-48849AAD40BCBB0E.pgp.txt
-
-    - name: Get the system's codename
-      command: "lsb_release -cs"
-      register: ubuntu_release
-
-    - name: Add the apt repository for PostgreSQL {{ pg_version }}
-      apt_repository:
-        repo: "deb https://apt.postgresql.org/pub/repos/apt/ {{ ubuntu_release.stdout }}-pgdg main"
-        state: present
-
-    - name: Add the apt repository for Zato {{ zato_version }}
-      apt_repository:
-        state: present
-        repo: "deb [arch=amd64] https://zato.io/repo/stable/{{ zato_version }}/ubuntu {{ubuntu_release.stdout}} main"
-
-    - name: Update apt cache before the installation of packages
-      apt: update_cache=yes
-
-    - name: Install PostgreSQL {{ pg_version }}
-      apt:
-        state: present
-        name: postgresql-{{ pg_version }}
-
-    - name: Install Zato {{ zato_version }}
-      apt:
-        state: present
-        name: zato
-
-    - name: Prepare work directories for Ansible
-      shell: |
-        mkdir -p /var/lib/postgresql/.ansible/tmp
-        chown -R postgres:postgres /var/lib/postgresql/.ansible
-
-        mkdir -p /opt/zato/.ansible/tmp
-        chown -R zato:zato /opt/zato/.ansible
-
-    - name: Install Zato {{ zato_version }} updates
-      become: true
-      become_user: "zato"
-      shell: |
-        cd ~/current
-        git pull
-        ~/current/update.sh
-
-    - name: Drop the SQL database if it exists (main)
-      become: true
-      become_user: "postgres"
-      community.postgresql.postgresql_db:
-        state: absent
-        force: "yes"
-        name: "{{ zato_db_main }}"
-
-    - name: Drop the SQL database if it exists (pub/sub)
-      become: true
-      become_user: "postgres"
-      community.postgresql.postgresql_db:
-        state: absent
-        force: "yes"
-        name: "{{ zato_db_pubsub }}"
-
-    - name: Create the SQL database (main)
-      become: true
-      become_user: "postgres"
-      community.postgresql.postgresql_db:
-        state: present
-        encoding: UTF-8
-        lc_collate: en_US.UTF-8
-        lc_ctype: en_US.UTF-8
-        template: template0
-        name: "{{ zato_db_main }}"
-
-    - name: Create the SQL database (pub/sub)
-      become: true
-      become_user: "postgres"
-      community.postgresql.postgresql_db:
-        state: present
-        encoding: UTF-8
-        lc_collate: en_US.UTF-8
-        lc_ctype: en_US.UTF-8
-        template: template0
-        name: "{{ zato_db_pubsub }}"
-
-    - name: Drop the SQL user if it exists (main)
-      become: true
-      become_user: "postgres"
-      community.postgresql.postgresql_user:
-        state: absent
-        fail_on_user: "no"
-        name: "{{ zato_db_username_main }}"
-
-    - name: Drop the SQL user if it exists (pub/sub)
-      become: true
-      become_user: "postgres"
-      community.postgresql.postgresql_user:
-        state: absent
-        fail_on_user: "no"
-        name: "{{ zato_db_username_pubsub }}"
-
-    - name: Create the SQL user (main)
-      become: true
-      become_user: "postgres"
-      community.postgresql.postgresql_user:
-        state: present
-        db: "{{ zato_db_main }}"
-        name: "{{ zato_db_username_main }}"
-        password: "{{ zato_db_password_main }}"
-        encrypted: "yes"
-        priv: "ALL"
-        comment: "Main Zato user for PostgreSQL"
-
-    - name: Create the SQL user (pub/sub)
-      become: true
-      become_user: "postgres"
-      community.postgresql.postgresql_user:
-        state: present
-        db: "{{ zato_db_pubsub }}"
-        name: "{{ zato_db_username_pubsub }}"
-        password: "{{ zato_db_password_pubsub }}"
-        encrypted: "yes"
-        priv: "ALL"
-        comment: "Zato publish/subscribe user for PostgreSQL"
-
-    - name: Grant access to the SQL user (main)
-      community.postgresql.postgresql_pg_hba:
-        create: "yes"
-        dest: "{{ pg_hba_conf_path }}"
-        contype: host
-        users: "{{ zato_db_username_main }}"
-        source: all
-        databases: "{{ zato_db_main }}, postgres"
-        method: md5
-
-    - name: Grant access to the SQL user (pub/sub)
-      community.postgresql.postgresql_pg_hba:
-        create: "yes"
-        dest: "{{ pg_hba_conf_path }}"
-        contype: host
-        users: "{{ zato_db_username_pubsub }}"
-        source: all
-        databases: "{{ zato_db_pubsub }}, postgres"
-        method: md5
-
-    - name: Configure the database to listen on all interfaces
-      replace:
-        path: "{{ pg_conf_path }}"
-        regexp: "#listen_addresses = 'localhost'"
-        replace: "listen_addresses = '*'"
-
-    - name: Enable password-based SSH connections
-      replace:
-        path: "/etc/ssh/sshd_config"
-        regexp: "PasswordAuthentication no"
-        replace: "PasswordAuthentication yes"
-
-    - name: Allow for SSH connections to be established from anywhere
-      replace:
-        path: "/etc/ssh/sshd_config"
-        regexp: "#ListenAddress 0.0.0.0"
-        replace: "ListenAddress 0.0.0.0"
-
-    - name: Restart the database after its configuration was changed
-      service: name=postgresql state=restarted
-
-    - name: Restart the SSH server after its configuration was changed
-      service: name=sshd state=restarted
-
-    - name: Set the SSH password for user 'zato'
-      user:
-        name: zato
-        password: "{{ zato_ssh_user_password | password_hash('sha512') }}"
-
-    - name: Create a quickstart environment
-      become: true
-      become_user: "zato"
-      shell: |
-        PATH=$PATH:~/current/bin &&
-        {{ zato_env_path }}/zato-qs-stop.sh || true &&
-        rm -rf {{ zato_env_path }} &&
-        zato quickstart \
-            {{ zato_env_path }} \
-            --odb_type {{ zato_db_type }} \
-            --odb_host {{ zato_db_host }} \
-            --odb_port {{ zato_db_port }} \
-            --odb_db_name {{ zato_db_main }} \
-            --odb_user {{ zato_db_username_main }} \
-            --odb_password '{{ zato_db_password_main }}' \
-            --odb_password '{{ zato_db_password_main }}' \
-            --cluster_name '{{ zato_cluster_name }}' \
-            --verbose
-
-    - name: Enable internal services (if testing)
-      when: zato_run_internal_tests
-      become: true
-      become_user: "zato"
-      replace:
-        path: "{{ zato_env_path }}/server1/config/repo/server.conf"
-        regexp: "service_invoker_allow_internal="
-        replace: "service_invoker_allow_internal=/zato/api/invoke/{service_name}"
-
-    - name: Make sure all the previous Zato processes are stopped
-      shell: |
-        pkill --signal 9 -u zato || true
-
-    - name: Prepare the work directory for configuration details
-      shell: |
-        mkdir -p /opt/zato/env/details
-        chown -R zato:zato /opt/zato/env/details
-
-    - name: Store the environment's details in JSON
-      become: true
-      become_user: "zato"
-      copy:
-        content: |
-          {{ environment_config | to_nice_json }}
-        dest: ~/env/details/all-zato-env-details.json
-
-    - name: Save SSH credentials
-      local_action: copy content="{{ zato_ssh_user_password }}" dest={{ zato_ssh_user_password_file }}
-
-    - name: Save Dashboard credentials
-      local_action: copy content="{{ zato_dashboard_admin_password }}" dest={{ zato_dashboard_admin_password_file }}
-
-    - name: Save IDE credentials
-      local_action: copy content="{{ zato_ide_publisher_password }}" dest={{ zato_ide_publisher_password_file }}
-
-    - name: Save database user's credentials (main)
-      local_action: copy content="{{ zato_db_password_main }}" dest={{ zato_db_password_main_file }}
-
-    - name: Save database user's credentials (pub/sub)
-      local_action: copy content="{{ zato_db_password_pubsub }}" dest={{ zato_db_password_pubsub_file }}
-
-    - name: Create symlinks for backward compatibility
-      become: true
-      become_user: "zato"
-      shell: |
-        ln -sfv {{ zato_ssh_user_password_file }} ~/zato_user_password
-        ln -sfv {{ zato_dashboard_admin_password_file }} ~/web_admin_password
-        ln -sfv {{ zato_ide_publisher_password_file }} ~/zato_ide_publisher_password
-
-    - name: Set Bash defaults (zato)
-      become: true
-      become_user: "zato"
-      shell: |
-        echo ":set tabstop=4" >> ~/.vimrc
-        echo ":set shiftwidth=4" >> ~/.vimrc
-        echo ":set expandtab" >> ~/.vimrc
-        echo ":set noincsearch" >> ~/.vimrc
-        echo "export PATH=$PATH:~/current/bin" >> ~/.bashrc
-        echo "source /usr/share/mc/bin/mc.sh" >> ~/.bashrc
-        echo 'SELECTED_EDITOR="/usr/bin/vim.basic"' >> ~/.selected-editor
-
-        echo "export ZATO_HOT_DEPLOY_DIR=/opt/hot-deploy/services" >> ~/.bashrc
-        echo "export ZATO_USER_CONF_DIR=/opt/hot-deploy/user-conf" >> ~/.bashrc
-        echo "export ZATO_HOT_DEPLOY_PREFER_SNAPSHOTS={{ zato_hot_deploy_prefer_snapshots }}" >> ~/.bashrc
-
-    - name: Set Bash defaults (root)
-      become: true
-      become_user: "root"
-      shell: |
-        echo ":set tabstop=4" >> ~/.vimrc
-        echo ":set shiftwidth=4" >> ~/.vimrc
-        echo ":set expandtab" >> ~/.vimrc
-        echo ":set noincsearch" >> ~/.vimrc
-        echo "source /usr/share/mc/bin/mc.sh" >> ~/.bashrc
-        echo "sudo su - zato" >> ~/.bash_history
-        echo 'SELECTED_EDITOR="/usr/bin/vim.basic"' >> ~/.selected-editor
-
-    - name: Set Bash defaults (root-level user)
-      when: zato_root_level_user
-      become: true
-      become_user: "root"
-      shell: |
-        echo ":set tabstop=4" >> ~{{ zato_root_level_user }}/.vimrc
-        echo ":set shiftwidth=4" >> ~{{ zato_root_level_user }}/.vimrc
-        echo ":set expandtab" >> ~{{ zato_root_level_user }}/.vimrc
-        echo ":set noincsearch" >> ~{{ zato_root_level_user }}/.vimrc
-        echo "source /usr/share/mc/bin/mc.sh" >> ~{{ zato_root_level_user }}/.bashrc
-        echo "sudo su - zato" >> ~{{ zato_root_level_user }}/.bash_history
-        echo 'SELECTED_EDITOR="/usr/bin/vim.basic"' >> ~{{ zato_root_level_user }}/.selected-editor
-
-    - name: Prepare default hot-deployment directories
-      become: true
-      become_user: "root"
-      shell: |
-        mkdir -p /opt/hot-deploy/python-reqs
-        mkdir -p /opt/hot-deploy/services
-        mkdir -p /opt/hot-deploy/user-conf
-        chown -R zato:zato /opt/hot-deploy
-
-    - name: Prepare per-component startup scripts
-      become: true
-      become_user: "root"
-      shell: |
-        echo "{{ zato_start_preamble }}" > {{ zato_env_path }}/start-server-fg.sh
-        echo "~/current/bin/zato start {{ zato_env_path }}/server1 --fg" >> {{ zato_env_path }}/start-server-fg.sh
-
-        echo "{{ zato_start_preamble }}" > {{ zato_env_path }}/start-web-admin-fg.sh
-        echo "~/current/bin/zato start {{ zato_env_path }}/web-admin --fg" >> {{ zato_env_path }}/start-web-admin-fg.sh
-
-        echo "{{ zato_start_preamble }}" > {{ zato_env_path }}/start-load-balancer-fg.sh
-        echo "~/current/bin/zato start {{ zato_env_path }}/load-balancer --fg" >> {{ zato_env_path }}/start-load-balancer-fg.sh
-
-        echo "{{ zato_start_preamble }}" > {{ zato_env_path }}/start-scheduler-fg.sh
-        echo "~/current/bin/zato start {{ zato_env_path }}/scheduler --fg" >> {{ zato_env_path }}/start-scheduler-fg.sh
-
-        chown zato:zato {{ zato_env_path }}/start-*.sh
-        chmod 764 {{ zato_env_path }}/start-*.sh
-
-    - name: Start the quickstart environment (server)
-      become: true
-      become_user: "zato"
-      shell: |
-        ~/env/qs-1/start-server-fg.sh
-      async: "{{ zato_async_timeout }}"
-      poll: 0
-
-    - name: Start the quickstart environment (dashboard)
-      become: true
-      become_user: "zato"
-      shell: |
-        ~/env/qs-1/start-web-admin-fg.sh
-      async: "{{ zato_async_timeout }}"
-      poll: 0
-
-    - name: Start the quickstart environment (load balancer)
-      become: true
-      become_user: "zato"
-      shell: |
-        ~/env/qs-1/start-load-balancer-fg.sh
-      async: "{{ zato_async_timeout }}"
-      poll: 0
-
-    - name: Start the quickstart environment (scheduler)
-      become: true
-      become_user: "zato"
-      shell: |
-        ~/env/qs-1/start-scheduler-fg.sh
-      async: "{{ zato_async_timeout }}"
-      poll: 0
-
-    - name: Wait until the environment becomes accessible
-      become: true
-      become_user: "zato"
-      shell: |
-        ~/current/bin/zato wait --path {{ zato_env_path }}/server1 --timeout 120
-
-    - name: Check that the server started
-      uri:
-        url: http://127.0.0.1:17010/zato/ping
-
-    - name: Check that the load-balancer started
-      uri:
-        url: http://127.0.0.1:11223/zato/ping
-
-    - name: Check that the dashboard started
-      uri:
-        url: http://127.0.0.1:8183/zato/
-
-    - name: Set Dashboard password
-      become: true
-      become_user: "zato"
-      shell: |
-        ~/current/bin/zato update password {{ zato_env_path }}/web-admin admin --password {{ zato_dashboard_admin_password }} --verbose
-
-    - name: Set IDE password
-      become: true
-      become_user: "zato"
-      shell: |
-        ~/current/bin/zato set-ide-password {{ zato_env_path }}/server1 --password {{ zato_ide_publisher_password }} --verbose
+    - name: Run tasks 01
+      when: zato_qs_run_01
+      import_tasks: zato-quickstart-01.yaml
+
+    - name: Run tasks 02
+      when: zato_qs_run_02
+      import_tasks: zato-quickstart-02.yaml
