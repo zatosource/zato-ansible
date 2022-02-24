@@ -21,6 +21,7 @@
       - tzdata
       - mlocate
       - net-tools
+      - locale-gen
       - libssl-dev
       - lsb-release
       - redis-server
