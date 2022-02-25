@@ -5,6 +5,10 @@
     update_cache: yes
     cache_valid_time: 3600
 
+- name: Make sure the database is started
+  shell: |
+    service postgresql restart
+
 - name: Regenerate host SSH keys
   shell: |
     rm -v /etc/ssh/ssh_host_*
