@@ -329,7 +329,7 @@
   async: "{{ zato_async_timeout }}"
   poll: 0
 
-- name: Wait for the environment to start
+- name: Wait for the environment to start (10-20 seconds)
   become: true
   become_user: "zato"
   shell: |
