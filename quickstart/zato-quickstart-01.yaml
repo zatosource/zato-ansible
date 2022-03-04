@@ -20,6 +20,7 @@
       - tshark
       - tzdata
       - mlocate
+      - git-lfs
       - net-tools
       - locales
       - libssl-dev
