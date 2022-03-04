@@ -283,7 +283,6 @@
     mkdir -p /opt/hot-deploy/services
     mkdir -p /opt/hot-deploy/user-conf
     mkdir -p /opt/hot-deploy/enmasse
-    echo "{}" > /opt/hot-deploy/enmasse/enmasse.yaml
     chown -R zato:zato /opt/hot-deploy
 
 - name: Prepare per-component startup scripts
