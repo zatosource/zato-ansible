@@ -366,6 +366,12 @@
   shell: |
     ~/current/bin/zato set-ide-password {{ zato_env_path }}/server1 --password {{ zato_ide_publisher_password }} --verbose
 
+- name: Make sure config files are deployed
+  become: true
+  become_user: "zato"
+  shell: |
+    touch /opt/hot-deploy/user-conf/*
+
 - name: Run enmasse
   become: true
   become_user: "zato"
