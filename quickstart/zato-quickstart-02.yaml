@@ -282,6 +282,8 @@
     mkdir -p /opt/hot-deploy/python-reqs
     mkdir -p /opt/hot-deploy/services
     mkdir -p /opt/hot-deploy/user-conf
+    mkdir -p /opt/hot-deploy/enmasse
+    echo "{}" > /opt/hot-deploy/enmasse/enmasse.yaml
     chown -R zato:zato /opt/hot-deploy
 
 - name: Prepare per-component startup scripts
@@ -364,6 +366,12 @@
   become_user: "zato"
   shell: |
     ~/current/bin/zato set-ide-password {{ zato_env_path }}/server1 --password {{ zato_ide_publisher_password }} --verbose
+
+- name: Run enmasse
+  become: true
+  become_user: "zato"
+  shell: |
+    ~/current/bin/zato enmasse {{ zato_env_path }}/server1 --import --input /opt/hot-deploy/enmasse/enmasse.yaml --replace-odb-objects --verbose
 
 - name: Run internal tests (it may take 10+ minutes)
   when: zato_run_internal_tests
