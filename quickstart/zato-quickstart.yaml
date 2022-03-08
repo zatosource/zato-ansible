@@ -38,6 +38,7 @@
     zato_async_timeout: "{{ 3600 * 24 * 365 * 100 }}" # 1 hour (in seconds) * 24 hours * 365 days * 100 years
     zato_start_preamble: |
         export PATH=$PATH:~/current/bin
+        export PYTHONPATH=$PYTHONPATH:/tmp/zato-extlib
         export ZATO_PYTHON_REQS={{ zato_python_reqs }}
         export ZATO_HOT_DEPLOY_DIR=/opt/hot-deploy/services
         export ZATO_USER_CONF_DIR=/opt/hot-deploy/user-conf
