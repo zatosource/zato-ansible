@@ -332,6 +332,7 @@
     echo "source /usr/share/mc/bin/mc.sh" >> ~/.bashrc
     echo 'SELECTED_EDITOR="/usr/bin/vim.basic"' >> ~/.selected-editor
 
+    echo "export PYTHONPATH=$PYTHONPATH:/tmp/zato-extlib" >> ~/.bashrc
     echo "export ZATO_HOT_DEPLOY_DIR=/opt/hot-deploy/services" >> ~/.bashrc
     echo "export ZATO_USER_CONF_DIR=/opt/hot-deploy/user-conf" >> ~/.bashrc
     echo "export ZATO_HOT_DEPLOY_PREFER_SNAPSHOTS={{ zato_hot_deploy_prefer_snapshots }}" >> ~/.bashrc
