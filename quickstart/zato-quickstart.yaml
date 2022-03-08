@@ -53,6 +53,8 @@
     zato_use_mysql: "{{ Zato_Use_MySQL | default(True) }}"
     zato_use_postgresql: "{{ Zato_Use_PostgreSQL | default(True) }}"
 
+    zato_install_binaries: "{{ Zato_Install_Binaries | default(True) }}"
+
     environment_config:
 
       zato_env_path: "{{ zato_env_path }}"

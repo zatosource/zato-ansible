@@ -69,7 +69,7 @@
     url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
 
 - name: Import the GPG signing key for Zato {{ zato_version }} (01)
-  when: zato_use_postgresql
+  when: zato_install_binaries
   apt_key:
     state: present
     url: https://zato.io/repo/zato-3.2-48849AAD40BCBB0E.pgp.txt
@@ -85,6 +85,7 @@
     state: present
 
 - name: Add the apt repository for Zato {{ zato_version }} (01)
+  when: zato_install_binaries
   apt_repository:
     state: present
     repo: "deb [arch=amd64] https://zato.io/repo/stable/{{ zato_version }}/ubuntu {{ubuntu_release.stdout}} main"
@@ -99,6 +100,7 @@
     name: postgresql-{{ pg_version }}
 
 - name: Install Zato {{ zato_version }} (01)
+  when: zato_install_binaries
   apt:
     state: present
     name: zato
@@ -112,6 +114,7 @@
     chown -R zato:zato /opt/zato/.ansible
 
 - name: Install Zato {{ zato_version }} updates (01)
+  when: zato_install_binaries
   become: true
   become_user: "zato"
   shell: |
