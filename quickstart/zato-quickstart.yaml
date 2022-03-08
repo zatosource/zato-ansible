@@ -50,7 +50,7 @@
     zato_qs_run_01: "{{ Zato_Run_Quickstart_Step_01 | default(False) }}"
     zato_qs_run_02: "{{ Zato_Run_Quickstart_Step_02 | default(False) }}"
 
-    zato_use_mysql: "{{ Zato_Use_MySQL | default(False) }}"
+    zato_use_mysql: "{{ Zato_Use_MySQL | default(True) }}"
     zato_use_postgresql: "{{ Zato_Use_PostgreSQL | default(True) }}"
 
     environment_config:
@@ -76,7 +76,7 @@
 
   tasks:
 
-    - name: Set facts
+    - name: Set facts (init)
       set_fact:
 
         zato_python_reqs: "{{ zato_python_reqs_tmp if zato_has_python_reqs_in_tmp else zato_python_reqs_opt }}"
@@ -98,10 +98,10 @@
         zato_hot_deploy_prefer_snapshots: "{{ Zato_Hot_Deploy_Prefer_Snapshots | default(True) }}"
         zato_firewall_limit_to_local_connections: "{{ Zato_Firewall_Limit_To_Local_Connections | default(False) }}"
 
-    - name: Run tasks 01
+    - name: Run tasks 01 (init)
       when: zato_qs_run_01
       import_tasks: zato-quickstart-01.yaml
 
-    - name: Run tasks 02
+    - name: Run tasks 02 (init)
       when: zato_qs_run_02
       import_tasks: zato-quickstart-02.yaml
