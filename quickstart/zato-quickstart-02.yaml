@@ -354,7 +354,7 @@
   uri:
     url: http://127.0.0.1:8183/zato/
 
-- name: Set Dashboard password
+- name: Set Dashboard password (02)
   become: true
   become_user: "zato"
   shell: |
