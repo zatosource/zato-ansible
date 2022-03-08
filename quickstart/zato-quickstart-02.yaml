@@ -13,16 +13,16 @@
 
 - name: Make sure the database is started (02)
   shell: |
-    service postgresql restart
+    DEBIAN_FRONTEND=noninteractive service postgresql restart
 
 - name: Regenerate host SSH keys (02)
   shell: |
     rm -v /etc/ssh/ssh_host_*
-    dpkg-reconfigure openssh-server
+    DEBIAN_FRONTEND=noninteractive dpkg-reconfigure openssh-server
 
 - name: Restart the SSH server after regenerating its keys (02)
   shell: |
-    service ssh restart
+    DEBIAN_FRONTEND=noninteractive service ssh restart
 
 - name: Drop the SQL database if it exists (main) (02)
   become: true
@@ -142,11 +142,11 @@
 
 - name: Restart the database after its configuration was changed (02)
   shell: |
-    service postgresql restart
+    DEBIAN_FRONTEND=noninteractive service postgresql restart
 
 - name: Restart the SSH server after its configuration was changed (02)
   shell: |
-    service ssh restart
+    DEBIAN_FRONTEND=noninteractive service ssh restart
 
 - name: Set the SSH password for user 'zato' (02)
   user:
