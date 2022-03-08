@@ -11,7 +11,8 @@
     curl -sL https://deb.nodesource.com/setup_17.x | bash -
     apt-get install -y nodejs
 
-- name: Make sure the database is started (02)
+- name: Make sure that PostgreSQL is started (02)
+  when: zato_use_postgresql
   shell: |
     DEBIAN_FRONTEND=noninteractive service postgresql restart
 
@@ -24,7 +25,8 @@
   shell: |
     DEBIAN_FRONTEND=noninteractive service ssh restart
 
-- name: Drop the SQL database if it exists (main) (02)
+- name: Drop the SQL database if it exists (PG -> main) (02)
+  when: zato_use_postgresql
   become: true
   become_user: "postgres"
   community.postgresql.postgresql_db:
@@ -32,7 +34,8 @@
     force: "yes"
     name: "{{ zato_db_main }}"
 
-- name: Drop the SQL database if it exists (pub/sub) (02)
+- name: Drop the SQL database if it exists (PG -> pub/sub) (02)
+  when: zato_use_postgresql
   become: true
   become_user: "postgres"
   community.postgresql.postgresql_db:
@@ -40,7 +43,8 @@
     force: "yes"
     name: "{{ zato_db_pubsub }}"
 
-- name: Create the SQL database (main) (02)
+- name: Create the SQL database (PG -> main) (02)
+  when: zato_use_postgresql
   become: true
   become_user: "postgres"
   community.postgresql.postgresql_db:
@@ -51,7 +55,8 @@
     template: template0
     name: "{{ zato_db_main }}"
 
-- name: Create the SQL database (pub/sub) (02)
+- name: Create the SQL database (PG -> pub/sub) (02)
+  when: zato_use_postgresql
   become: true
   become_user: "postgres"
   community.postgresql.postgresql_db:
@@ -63,6 +68,7 @@
     name: "{{ zato_db_pubsub }}"
 
 - name: Drop the SQL user if it exists (main) (02)
+  when: zato_use_postgresql
   become: true
   become_user: "postgres"
   community.postgresql.postgresql_user:
@@ -70,7 +76,8 @@
     fail_on_user: "no"
     name: "{{ zato_db_username_main }}"
 
-- name: Drop the SQL user if it exists (pub/sub) (02)
+- name: Drop the SQL user if it exists (PG -> pub/sub) (02)
+  when: zato_use_postgresql
   become: true
   become_user: "postgres"
   community.postgresql.postgresql_user:
@@ -78,7 +85,8 @@
     fail_on_user: "no"
     name: "{{ zato_db_username_pubsub }}"
 
-- name: Create the SQL user (main) (02)
+- name: Create the SQL user (PG -> main) (02)
+  when: zato_use_postgresql
   become: true
   become_user: "postgres"
   community.postgresql.postgresql_user:
@@ -90,7 +98,8 @@
     priv: "ALL"
     comment: "Main Zato user for PostgreSQL"
 
-- name: Create the SQL user (pub/sub) (02)
+- name: Create the SQL user (PG -> pub/sub) (02)
+  when: zato_use_postgresql
   become: true
   become_user: "postgres"
   community.postgresql.postgresql_user:
@@ -102,7 +111,8 @@
     priv: "ALL"
     comment: "Zato publish/subscribe user for PostgreSQL"
 
-- name: Grant access to the SQL user (main) (02)
+- name: Grant access to the SQL user (PG -> main) (02)
+  when: zato_use_postgresql
   community.postgresql.postgresql_pg_hba:
     create: "yes"
     dest: "{{ pg_hba_conf_path }}"
@@ -112,7 +122,8 @@
     databases: "{{ zato_db_main }}, postgres"
     method: md5
 
-- name: Grant access to the SQL user (pub/sub) (02)
+- name: Grant access to the SQL user (PG -> pub/sub) (02)
+  when: zato_use_postgresql
   community.postgresql.postgresql_pg_hba:
     create: "yes"
     dest: "{{ pg_hba_conf_path }}"
@@ -122,7 +133,8 @@
     databases: "{{ zato_db_pubsub }}, postgres"
     method: md5
 
-- name: Configure the database to listen on all interfaces (02)
+- name: Configure PostgreSQL to listen on all interfaces (02)
+  when: zato_use_postgresql
   replace:
     path: "{{ pg_conf_path }}"
     regexp: "#listen_addresses = 'localhost'"
@@ -140,7 +152,8 @@
     regexp: "#ListenAddress 0.0.0.0"
     replace: "ListenAddress 0.0.0.0"
 
-- name: Restart the database after its configuration was changed (02)
+- name: Restart PostgreSQL after its configuration was changed (02)
+  when: zato_use_postgresql
   shell: |
     DEBIAN_FRONTEND=noninteractive service postgresql restart
 

@@ -25,6 +25,7 @@
       - locales
       - libssl-dev
       - lsb-release
+      - mysql-client
       - redis-server
       - libldap2-dev
       - libsasl2-dev
@@ -56,11 +57,13 @@
 
 - name: Import the GPG signing key for PostgreSQL {{ pg_version }} (01)
   apt_key:
+    when: zato_use_postgresql
     state: present
     url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
 
 - name: Import the GPG signing key for Zato {{ zato_version }} (01)
   apt_key:
+    when: zato_use_postgresql
     state: present
     url: https://zato.io/repo/zato-3.2-48849AAD40BCBB0E.pgp.txt
 
@@ -70,6 +73,7 @@
 
 - name: Add the apt repository for PostgreSQL {{ pg_version }} (01)
   apt_repository:
+    when: zato_use_postgresql
     repo: "deb https://apt.postgresql.org/pub/repos/apt/ {{ ubuntu_release.stdout }}-pgdg main"
     state: present
 
@@ -83,6 +87,7 @@
 
 - name: Install PostgreSQL {{ pg_version }} (01)
   apt:
+    when: zato_use_postgresql
     state: present
     name: postgresql-{{ pg_version }}
 
