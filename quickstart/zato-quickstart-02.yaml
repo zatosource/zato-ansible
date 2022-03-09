@@ -284,6 +284,15 @@
         --cluster_name '{{ zato_cluster_name }}' \
         --verbose
 
+- name: Enable Redis (02)
+  when: zato_enable_redis
+  become: true
+  become_user: "zato"
+  replace:
+    path: "{{ zato_env_path }}/server1/config/repo/server.conf"
+    regexp: "^host=$"
+    replace: "host=localhost"
+
 - name: Enable internal services (if testing) (02)
   when: zato_run_internal_tests
   become: true
@@ -338,6 +347,17 @@
     ln -sfv {{ zato_dashboard_admin_password_file }} ~/web_admin_password
     ln -sfv {{ zato_ide_publisher_password_file }} ~/zato_ide_publisher_password
 
+- name: Copy SSH material (02)
+  when: zato_map_ssh_dir
+  become: true
+  become_user: "root"
+  shell: |
+    rm -rf /opt/zato/.ssh
+    cp -r /tmp/zato-host-ssh-dir/ /opt/zato/.ssh
+    chown -R zato:zato /opt/zato/.ssh/
+    chmod 400 /opt/zato/.ssh/*
+    chmod 700 /opt/zato/.ssh
+
 - name: Set Bash defaults (zato) (02)
   become: true
   become_user: "zato"
@@ -350,7 +370,7 @@
     echo "source /usr/share/mc/bin/mc.sh" >> ~/.bashrc
     echo 'SELECTED_EDITOR="/usr/bin/vim.basic"' >> ~/.selected-editor
 
-    echo "export PYTHONPATH=$PYTHONPATH:/tmp/zato-extlib" >> ~/.bashrc
+    echo "export PYTHONPATH=$PYTHONPATH:/opt/zato/current/extlib" >> ~/.bashrc
     echo "export ZATO_HOT_DEPLOY_DIR=/opt/hot-deploy/services" >> ~/.bashrc
     echo "export ZATO_USER_CONF_DIR=/opt/hot-deploy/user-conf:/tmp/zato-user-conf" >> ~/.bashrc
     echo "export ZATO_HOT_DEPLOY_PREFER_SNAPSHOTS={{ zato_hot_deploy_prefer_snapshots }}" >> ~/.bashrc
@@ -408,6 +428,18 @@
 
     chown zato:zato {{ zato_env_path }}/start-*.sh
     chmod 764 {{ zato_env_path }}/start-*.sh
+
+- name: Set extlib structure (02)
+  when: zato_ext_lib_dir
+  shell: |
+    chown -R zato:zato /opt/zato
+    rm -rf /opt/zato/current/extlib
+    ln -s /tmp/zato-extlib /opt/zato/current/extlib
+
+- name: Set filesystem permissions (02)
+  when: zato_ext_lib_dir
+  shell: |
+    chown -R zato:zato /opt/zato
 
 - name: Start the quickstart environment (server) (02)
   become: true
