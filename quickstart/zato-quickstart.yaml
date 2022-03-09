@@ -60,6 +60,8 @@
     zato_install_binaries: "{{ Zato_Install_Binaries | default(True) }}"
     zato_use_hashicorp_vault: "{{ Zato_Use_Hashicorp_Vault | default(False) }}"
     zato_enable_redis: "{{ Zato_Use_Hashicorp_Vault | default(True) }}"
+    zato_pre_enmasse_script: "{{ Zato_Pre_Enmasse_Script | default(False) }}"
+    zato_post_install_script: "{{ Zato_Post_Install_Script | default(False) }}"
 
     environment_config:
 
