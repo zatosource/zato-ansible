@@ -241,7 +241,7 @@
     password: "{{ zato_ssh_user_password | password_hash('sha512') }}"
 
 - name: Install HashiCorp Vault (02)
-  when: False
+  when: zato_use_hashicorp_vault
   become: true
   become_user: "root"
   shell: |

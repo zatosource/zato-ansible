@@ -103,6 +103,8 @@
         zato_hot_deploy_prefer_snapshots: "{{ Zato_Hot_Deploy_Prefer_Snapshots | default(True) }}"
         zato_firewall_limit_to_local_connections: "{{ Zato_Firewall_Limit_To_Local_Connections | default(False) }}"
 
+        zato_hashicorp_vault_token: "{{ Zato_Hashicorp_Vault_Token | default(zato_hashicorp_vault_token) or zato_hashicorp_vault_token }}"
+
     - name: Run tasks 01 (init)
       when: zato_qs_run_01
       import_tasks: zato-quickstart-01.yaml
