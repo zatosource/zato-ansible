@@ -240,9 +240,27 @@
     name: zato
     password: "{{ zato_ssh_user_password | password_hash('sha512') }}"
 
-- name: Make sure all the previous Zato processes are stopped (02)
+- name: Install HashiCorp Vault (02)
+  when: False
+  become: true
+  become_user: "root"
+  shell: |
+    curl -fsSL https://apt.releases.hashicorp.com/gpg | apt-key add -
+    apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+    apt-get update && apt-get install vault
+
+- name: Make sure all the previous processes started by user zato are stopped (02)
   shell: |
     pkill --signal 9 -u zato || true
+
+- name: Start HashiCorp Vault (dev) (02)
+  when: zato_use_hashicorp_vault
+  become: true
+  become_user: "zato"
+  shell: |
+    /usr/bin/vault server -dev -dev-root-token-id={{ zato_hashicorp_vault_token }}
+  async: "{{ zato_async_timeout }}"
+  poll: 0
 
 - name: Make sure any previous environment is deleted (02)
   shell: |
@@ -334,7 +352,7 @@
 
     echo "export PYTHONPATH=$PYTHONPATH:/tmp/zato-extlib" >> ~/.bashrc
     echo "export ZATO_HOT_DEPLOY_DIR=/opt/hot-deploy/services" >> ~/.bashrc
-    echo "export ZATO_USER_CONF_DIR=/opt/hot-deploy/user-conf" >> ~/.bashrc
+    echo "export ZATO_USER_CONF_DIR=/opt/hot-deploy/user-conf:/tmp/zato-user-conf" >> ~/.bashrc
     echo "export ZATO_HOT_DEPLOY_PREFER_SNAPSHOTS={{ zato_hot_deploy_prefer_snapshots }}" >> ~/.bashrc
 
 - name: Set Bash defaults (root) (02)
@@ -453,11 +471,18 @@
   shell: |
     ~/current/bin/zato set-ide-password {{ zato_env_path }}/server1 --password {{ zato_ide_publisher_password }} --verbose
 
+- name: Make sure the directory for config files exists (02)
+  become: true
+  become_user: "zato"
+  shell: |
+    mkdir -p /tmp/zato-user-conf/
+
 - name: Make sure config files are deployed (02)
   become: true
   become_user: "zato"
   shell: |
-    touch /opt/hot-deploy/user-conf/*
+    touch -c /opt/hot-deploy/user-conf/*
+    touch -c /tmp/zato-user-conf/*
 
 - name: Run enmasse -> /opt (02)
   become: true
