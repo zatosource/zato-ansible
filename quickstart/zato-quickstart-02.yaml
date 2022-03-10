@@ -518,8 +518,6 @@
 
 - name: Run the pre-enmasse script (02)
   when: zato_pre_enmasse_script
-  become: true
-  become_user: "zato"
   shell: |
     /usr/bin/bash /tmp/zato-pre-enmasse-script.sh
 
@@ -535,7 +533,7 @@
   shell: |
     ~/current/bin/zato enmasse {{ zato_env_path }}/server1 --import --input /tmp/enmasse.yaml --replace-odb-objects --exit-on-missing-file --verbose
 
-- name: Run the pre-enmasse script (02)
+- name: Run the post-install script (02)
   when: zato_post_install_script
   become: true
   become_user: "zato"
