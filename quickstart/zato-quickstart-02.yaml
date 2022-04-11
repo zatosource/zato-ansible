@@ -23,7 +23,7 @@
 
 - name: Make sure that Redis is started (02)
   shell: |
-    DEBIAN_FRONTEND=noninteractive service postgresql restart
+    DEBIAN_FRONTEND=noninteractive service redis-server restart
 
 - name: Regenerate host SSH keys (02)
   shell: |
