@@ -16,6 +16,7 @@
       - curl
       - htop
       - wget
+      - telnet
       - procps
       - tshark
       - tzdata
