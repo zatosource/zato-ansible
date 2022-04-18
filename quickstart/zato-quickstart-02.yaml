@@ -279,13 +279,13 @@
     rm -rf {{ zato_env_path }} &&
     zato quickstart \
         {{ zato_env_path }} \
-        --odb_type {{ zato_db_type }} \
-        --odb_host {{ zato_db_host }} \
-        --odb_port {{ zato_db_port }} \
-        --odb_db_name {{ zato_db_main }} \
-        --odb_user {{ zato_db_username_main }} \
-        --odb_password '{{ zato_db_password_main }}' \
-        --cluster_name '{{ zato_cluster_name }}' \
+        --odb-type {{ zato_db_type }} \
+        --odb-host {{ zato_db_host }} \
+        --odb-port {{ zato_db_port }} \
+        --odb-db-name {{ zato_db_main }} \
+        --odb-user {{ zato_db_username_main }} \
+        --odb-password '{{ zato_db_password_main }}' \
+        --cluster-name '{{ zato_cluster_name }}' \
         --verbose
 
 - name: Enable Redis (02)
