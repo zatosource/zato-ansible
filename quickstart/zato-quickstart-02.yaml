@@ -441,7 +441,6 @@
     ln -s /tmp/zato-extlib /opt/zato/current/extlib
 
 - name: Set filesystem permissions (02)
-  when: zato_ext_lib_dir
   shell: |
     chown -R zato:zato /opt/zato
 
