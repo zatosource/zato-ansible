@@ -404,13 +404,11 @@
     echo "sudo su - zato" >> ~{{ zato_root_level_user }}/.bash_history
     echo 'SELECTED_EDITOR="/usr/bin/vim.basic"' >> ~{{ zato_root_level_user }}/.selected-editor
 
-- name: Append environment variables
+- name: Make sure the file environment variables exists
   become: true
   become_user: "zato"
   shell: |
-    touch /tmp/zato-env.txt
-    printf "\n" >> ~/.bashrc
-    cat /tmp/zato-env.txt >> ~/.bashrc
+    touch /tmp/zato-env.ini
 
 - name: Prepare default hot-deployment directories (02)
   become: true
@@ -530,29 +528,25 @@
 - name: Run the pre-enmasse script (02)
   when: zato_pre_enmasse_script
   shell: |
-    . ~/.bashrc &&
     /usr/bin/bash /tmp/zato-pre-enmasse-script.sh
 
 - name: Run enmasse -> /opt (02)
   become: true
   become_user: "zato"
   shell: |
-    . ~/.bashrc &&
-    ~/current/bin/zato enmasse {{ zato_env_path }}/server1 --import --input /opt/hot-deploy/enmasse/enmasse.yaml --replace-odb-objects --exit-on-missing-file --verbose
+    ~/current/bin/zato enmasse {{ zato_env_path }}/server1 --import --input /opt/hot-deploy/enmasse/enmasse.yaml --replace-odb-objects --exit-on-missing-file --env-file /tmp/zato-env.ini --verbose
 
 - name: Run enmasse -> /tmp (02)
   become: true
   become_user: "zato"
   shell: |
-    . ~/.bashrc &&
-    ~/current/bin/zato enmasse {{ zato_env_path }}/server1 --import --input /tmp/enmasse.yaml --replace-odb-objects --exit-on-missing-file --verbose
+    ~/current/bin/zato enmasse {{ zato_env_path }}/server1 --import --input /tmp/enmasse.yaml --replace-odb-objects --exit-on-missing-file --env-file /tmp/zato-env.ini --verbose
 
 - name: Run the post-install script (02)
   when: zato_post_install_script
   become: true
   become_user: "zato"
   shell: |
-    . ~/.bashrc &&
     /usr/bin/bash /tmp/zato-post-install-script.sh
 
 - name: Run internal tests (it may take 10+ minutes) (02)
