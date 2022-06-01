@@ -512,6 +512,14 @@
   shell: |
     mkdir -p /tmp/zato-user-conf/
 
+- name: Append environment variables
+  become: true
+  become_user: "zato"
+  shell: |
+    touch /tmp/zato-env.txt
+    printf "\n" >> ~/.bashrc
+    cat /tmp/zato-env.txt >> ~/.bashrc
+
 - name: Make sure config files are deployed (02)
   become: true
   become_user: "zato"
