@@ -530,21 +530,21 @@
 - name: Run the pre-enmasse script (02)
   when: zato_pre_enmasse_script
   shell: |
-    source ~/.bashrc &&
+    . ~/.bashrc &&
     /usr/bin/bash /tmp/zato-pre-enmasse-script.sh
 
 - name: Run enmasse -> /opt (02)
   become: true
   become_user: "zato"
   shell: |
-    source ~/.bashrc &&
+    . ~/.bashrc &&
     ~/current/bin/zato enmasse {{ zato_env_path }}/server1 --import --input /opt/hot-deploy/enmasse/enmasse.yaml --replace-odb-objects --exit-on-missing-file --verbose
 
 - name: Run enmasse -> /tmp (02)
   become: true
   become_user: "zato"
   shell: |
-    source ~/.bashrc &&
+    . ~/.bashrc &&
     ~/current/bin/zato enmasse {{ zato_env_path }}/server1 --import --input /tmp/enmasse.yaml --replace-odb-objects --exit-on-missing-file --verbose
 
 - name: Run the post-install script (02)
@@ -552,7 +552,7 @@
   become: true
   become_user: "zato"
   shell: |
-    source ~/.bashrc &&
+    . ~/.bashrc &&
     /usr/bin/bash /tmp/zato-post-install-script.sh
 
 - name: Run internal tests (it may take 10+ minutes) (02)
