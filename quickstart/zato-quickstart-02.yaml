@@ -446,9 +446,9 @@
     rm -rf /opt/zato/current/extlib
     ln -s /tmp/zato-extlib /opt/zato/current/extlib
 
-- name: Set filesystem permissions (02)
-  shell: |
-    chown -R zato:zato /opt/zato
+#- name: Set filesystem permissions (02)
+#  shell: |
+#    chown -R zato:zato /opt/zato
 
 - name: Start the quickstart environment (server) (02)
   become: true
