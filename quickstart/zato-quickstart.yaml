@@ -55,6 +55,8 @@
     zato_use_mysql: "{{ Zato_Use_MySQL | default(True) }}"
     zato_use_postgresql: "{{ Zato_Use_PostgreSQL | default(True) }}"
 
+    zato_install_playwright: "{{ Zato_Install_Playwright | default(False) }}"
+
     zato_ext_lib_dir: "{{ Zato_Extlib_Dir | default(False) }}"
     zato_map_ssh_dir: "{{ Zato_Map_SSH_Dir | default(False) }}"
     zato_install_binaries: "{{ Zato_Install_Binaries | default(True) }}"

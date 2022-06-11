@@ -6,10 +6,29 @@
     cache_valid_time: 3600
 
 - name: Install NodeJS (for testing) (02)
-  when: zato_run_internal_tests
+  when: zato_run_internal_tests or zato_install_playwright
   shell: |
     curl -sL https://deb.nodesource.com/setup_17.x | bash -
-    apt-get install -y nodejs
+    apt-get install nodejs -y
+
+- name: Install Playwright (for testing) (02)
+  when: zato_install_playwright
+  become: true
+  become_user: "vagrant"
+  shell: |
+    npm i -D @playwright/test &&
+    npx playwright install    &&
+    pip install playwright    &&
+    echo "export PATH=$PATH:~/.local/bin" >> ~/.bashrc
+
+- name: Install Geany (for Playwright) (02)
+  when: zato_install_playwright
+  shell: |
+    apt-get install geany -y
+
+- name: Clean up extra installation artifacts (02)
+  shell: |
+    rm -rf /var/crash/*
 
 - name: Make sure that PostgreSQL is started (02)
   when: zato_use_postgresql
@@ -404,12 +423,6 @@
     echo "sudo su - zato" >> ~{{ zato_root_level_user }}/.bash_history
     echo 'SELECTED_EDITOR="/usr/bin/vim.basic"' >> ~{{ zato_root_level_user }}/.selected-editor
 
-- name: Make sure the file environment variables exists
-  become: true
-  become_user: "zato"
-  shell: |
-    touch /tmp/zato-env.ini
-
 - name: Prepare default hot-deployment directories (02)
   become: true
   become_user: "root"
@@ -446,9 +459,10 @@
     rm -rf /opt/zato/current/extlib
     ln -s /tmp/zato-extlib /opt/zato/current/extlib
 
-#- name: Set filesystem permissions (02)
-#  shell: |
-#    chown -R zato:zato /opt/zato
+- name: Set filesystem permissions (02)
+  when: zato_ext_lib_dir
+  shell: |
+    chown -R zato:zato /opt/zato
 
 - name: Start the quickstart environment (server) (02)
   become: true
@@ -534,13 +548,13 @@
   become: true
   become_user: "zato"
   shell: |
-    ~/current/bin/zato enmasse {{ zato_env_path }}/server1 --import --input /opt/hot-deploy/enmasse/enmasse.yaml --replace-odb-objects --exit-on-missing-file --env-file /tmp/zato-env.ini --verbose
+    ~/current/bin/zato enmasse {{ zato_env_path }}/server1 --import --input /opt/hot-deploy/enmasse/enmasse.yaml --replace-odb-objects --exit-on-missing-file --verbose
 
 - name: Run enmasse -> /tmp (02)
   become: true
   become_user: "zato"
   shell: |
-    ~/current/bin/zato enmasse {{ zato_env_path }}/server1 --import --input /tmp/enmasse.yaml --replace-odb-objects --exit-on-missing-file --env-file /tmp/zato-env.ini --verbose
+    ~/current/bin/zato enmasse {{ zato_env_path }}/server1 --import --input /tmp/enmasse.yaml --replace-odb-objects --exit-on-missing-file --verbose
 
 - name: Run the post-install script (02)
   when: zato_post_install_script

@@ -31,6 +31,7 @@
       - libsasl2-dev
       - openssh-server
       - bash-completion
+      - python3-pip
       - python3-psycopg2
       - python3-virtualenv
       - apt-transport-https
