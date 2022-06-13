@@ -64,6 +64,7 @@
     zato_enable_redis: "{{ Zato_Use_Hashicorp_Vault | default(True) }}"
     zato_pre_enmasse_script: "{{ Zato_Pre_Enmasse_Script | default(False) }}"
     zato_post_install_script: "{{ Zato_Post_Install_Script | default(False) }}"
+    zato_env_file: "{{ Zato_Env_File | default('/env-file-does-not-exist') }}"
 
     environment_config:
 
