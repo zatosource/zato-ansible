@@ -532,6 +532,11 @@
   shell: |
     mkdir -p /tmp/zato-user-conf/
 
+- name: Make sure config files are owner by user zato (02)
+  shell: |
+    chown -R zato:zato /opt/hot-deploy/user-conf/*
+    chown -R zato:zato /tmp/zato-user-conf/*
+
 - name: Make sure config files are deployed (02)
   become: true
   become_user: "zato"
@@ -548,13 +553,13 @@
   become: true
   become_user: "zato"
   shell: |
-    ~/current/bin/zato enmasse {{ zato_env_path }}/server1 --import --input /opt/hot-deploy/enmasse/enmasse.yaml --replace-odb-objects --exit-on-missing-file --verbose
+    ~/current/bin/zato enmasse {{ zato_env_path }}/server1 --import --input /opt/hot-deploy/enmasse/enmasse.yaml --env-file /tmp/env-file.ini --replace-odb-objects --exit-on-missing-file --verbose
 
 - name: Run enmasse -> /tmp (02)
   become: true
   become_user: "zato"
   shell: |
-    ~/current/bin/zato enmasse {{ zato_env_path }}/server1 --import --input /tmp/enmasse.yaml --replace-odb-objects --exit-on-missing-file --verbose
+    ~/current/bin/zato enmasse {{ zato_env_path }}/server1 --import --input /tmp/enmasse.yaml --env-file /tmp/env-file.ini --replace-odb-objects --exit-on-missing-file --verbose
 
 - name: Run the post-install script (02)
   when: zato_post_install_script
