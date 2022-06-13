@@ -548,13 +548,13 @@
   become: true
   become_user: "zato"
   shell: |
-    ~/current/bin/zato enmasse {{ zato_env_path }}/server1 --import --input /opt/hot-deploy/enmasse/enmasse.yaml --replace-odb-objects --exit-on-missing-file --verbose
+    ~/current/bin/zato enmasse {{ zato_env_path }}/server1 --import --input /opt/hot-deploy/enmasse/enmasse.yaml --env-file /opt/hot-deploy/enmasse/env.ini --replace-odb-objects --exit-on-missing-file --verbose
 
 - name: Run enmasse -> /tmp (02)
   become: true
   become_user: "zato"
   shell: |
-    ~/current/bin/zato enmasse {{ zato_env_path }}/server1 --import --input /tmp/enmasse.yaml --replace-odb-objects --exit-on-missing-file --verbose
+    ~/current/bin/zato enmasse {{ zato_env_path }}/server1 --import --input /tmp/enmasse.yaml --env-file /tmp/env.ini --replace-odb-objects --exit-on-missing-file --verbose
 
 - name: Run the post-install script (02)
   when: zato_post_install_script
