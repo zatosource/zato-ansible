@@ -532,7 +532,7 @@
   shell: |
     mkdir -p /tmp/zato-user-conf/
 
-- name: Make sure config files are owner by user zato (02)
+- name: Make sure config files are owned by user zato (02)
   shell: |
     chown -R zato:zato /opt/hot-deploy/user-conf/
     chown -R zato:zato /tmp/zato-user-conf/
